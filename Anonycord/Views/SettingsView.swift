@@ -16,29 +16,67 @@ struct SettingsView: View {
     @State private var channelDefStr: String
     @State private var cameraType: String
     @State private var videoQuality: String
-    @State private var exitAtEnd: Bool
-    @State private var infoAtBttm: Bool
-    @State private var hideAll: Bool
+    // @State private var exitAtEnd: Bool
+    // @State private var infoAtBttm: Bool
+    // @State private var hideAll: Bool
     
     @ObservedObject var mediaRecorder: MediaRecorder
 
     @State private var cameraTypes = ["Wide", "Selfie"]
     private let videoQualities = ["4K", "1080p"]
     
-    init(mediaRecorder: MediaRecorder) {
+    // init(mediaRecorder: MediaRecorder) {
+    //     self.mediaRecorder = mediaRecorder
+    //     _micSplRateStr = State(initialValue: String(AppSettings().micSampleRate))
+    //     _channelDefStr = State(initialValue: String(AppSettings().channelDef))
+    //     _cameraType = State(initialValue: AppSettings().cameraType)
+    //     _videoQuality = State(initialValue: AppSettings().videoQuality)
+    //     _exitAtEnd = State(initialValue: AppSettings().crashAtEnd)
+    //     _infoAtBttm = State(initialValue: AppSettings().showSettingsAtBttm)
+    //     _hideAll = State(initialValue: AppSettings().hideAll)
+    // }
+     init(mediaRecorder: MediaRecorder) {
         self.mediaRecorder = mediaRecorder
         _micSplRateStr = State(initialValue: String(AppSettings().micSampleRate))
         _channelDefStr = State(initialValue: String(AppSettings().channelDef))
         _cameraType = State(initialValue: AppSettings().cameraType)
         _videoQuality = State(initialValue: AppSettings().videoQuality)
-        _exitAtEnd = State(initialValue: AppSettings().crashAtEnd)
-        _infoAtBttm = State(initialValue: AppSettings().showSettingsAtBttm)
-        _hideAll = State(initialValue: AppSettings().hideAll)
     }
 
-    var body: some View {
+var body: some View {
         NavigationView {
             List {
+                Section(header: Label("Stealth Features", systemImage: "eye.slash"), footer: Text("Configure stealth recording options")) {
+                    Toggle("Auto Screen Dimming", isOn: $appSettings.autoDimming)
+                    
+                    if appSettings.autoDimming {
+                        VStack {
+                            Text("Dimming Intensity: \(Int(appSettings.dimmingIntensity * 100))%")
+                            Slider(value: $appSettings.dimmingIntensity, in: 0.1...0.9)
+                        }
+                    }
+                    
+                    Toggle("Require Long Press to Stop", isOn: $appSettings.requireLongPressToStop)
+                    
+                    if appSettings.requireLongPressToStop {
+                        VStack {
+                            Text("Long Press Duration: \(String(format: "%.1f", appSettings.longPressStopDuration))s")
+                            Slider(value: $appSettings.longPressStopDuration, in: 1.0...5.0, step: 0.5)
+                        }
+                    }
+                    
+                    Toggle("Hide All Controls While Recording", isOn: $appSettings.hideAll)
+                        .onChange(of: appSettings.hideAll) { newValue in
+                            if newValue {
+                                UIApplication.shared.confirmAlert(
+                                    title: "Instructions",
+                                    body: "To stop recording with this option enabled, use long press anywhere on the screen.",
+                                    onOK: {},
+                                    noCancel: true
+                                )
+                            }
+                        }
+                }
                 Section(header: Label("Audio Recording", systemImage: "mic"), footer: Text("Settings for audio recording. Those settings also applies to video recording.")) {
                     Picker("Channels", selection: $channelDefStr) {
                         ForEach(channelsMapping.keys.sorted(), id: \.self) { abbreviation in

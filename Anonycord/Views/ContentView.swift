@@ -12,32 +12,40 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var isRecordingVideo = false
     @State private var isRecordingAudio = false
-    @State private var videoRecordingURL: URL?
-    @State private var showingFilePicker = false
-    @State private var boxSize: CGFloat = UIScreen.main.bounds.width - 60
+    @State private var longPressProgress: CGFloat = 0
+    @State private var isLongPressing: Bool = false
     @StateObject private var mediaRecorder = MediaRecorder()
-    @State private var inBeta = true
+    
+    private var recordingStopGesture: some Gesture {
+        LongPressGesture(minimumDuration: appSettings.longPressStopDuration)
+            .onEnded { _ in
+                if isRecordingVideo {
+                    toggleVideoRecording()
+                }
+                if isRecordingAudio {
+                    toggleAudioRecording()
+                }
+            }
+            .simultaneously(with: DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if isLongPressing {
+                        withAnimation {
+                            longPressProgress = min(1.0, longPressProgress + 0.1)
+                        }
+                    }
+                }
+                .onEnded { _ in
+                    longPressProgress = 0
+                    isLongPressing = false
+                })
+    }
     
     var body: some View {
         ZStack {
-            if isRecordingAudio || isRecordingVideo {
-                Rectangle()
-                    .fill(Color.black)
-                    .edgesIgnoringSafeArea(.all)
-                    .onTapGesture {
-                        if isRecordingVideo {
-                            toggleVideoRecording()
-                        }
-                        if isRecordingAudio {
-                            toggleAudioRecording()
-                        }
-                    }
-            } else {
-                Color.black.edgesIgnoringSafeArea(.all)
-            }
+            Color.black.edgesIgnoringSafeArea(.all)
 
             VStack {
-                Spacer() // spacer sandwich 🥪
+                Spacer()
                 if !isRecordingAudio && !isRecordingVideo {
                     Image(uiImage: Bundle.main.icon!)
                         .cornerRadius(10)
@@ -45,30 +53,14 @@ struct ContentView: View {
                     Text("Anonycord")
                         .font(.system(size: UIFont.preferredFont(forTextStyle: .title2).pointSize, weight: .bold))
                         .transition(.scale)
-                    if inBeta {
-                        Text("v\(Bundle.main.releaseVersionNumber ?? "0.0") Beta \(Bundle.main.buildVersionNumber ?? "0") - by c22dev")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("v\(Bundle.main.releaseVersionNumber ?? "0.0") - by c22dev")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    }
                 }
                 Spacer()
+                
                 if !appSettings.hideAll || (!isRecordingAudio && !isRecordingVideo) {
                     HStack {
                         if !isRecordingAudio {
                             RecordButton(isRecording: $isRecordingVideo, action: toggleVideoRecording, icon: "video.circle.fill")
                                 .transition(.scale)
-//                                .contextMenu {
-//                                Button(action: {
-//                                    print("shhh...")
-//                                }, label:
-//                                        {
-//                                    Text("Standard")
-//                                })
-//                            }
                             if !isRecordingVideo {
                                 Spacer()
                             }
@@ -94,25 +86,25 @@ struct ContentView: View {
                         }
                     }
                     .padding()
-                    .frame(width: boxSize)
                     .background(VisualEffectBlur(blurStyle: .systemThinMaterialDark))
                     .cornerRadius(30)
                     .padding()
-                    .onChange(of: isRecordingVideo) { _ in
-                        withAnimation {
-                            boxSize = isRecordingVideo ? 100 : (UIScreen.main.bounds.width - 60)
-                        }
-                    }
-                    .onChange(of: isRecordingAudio) { _ in
-                        withAnimation {
-                            boxSize = isRecordingAudio ? 100 : (UIScreen.main.bounds.width - 60)
-                        }
-                    }
                 }
-                if !isRecordingAudio && !isRecordingVideo && appSettings.showSettingsAtBttm {
-                    Text("Current Parameters : \(appSettings.videoQuality), \(appSettings.cameraType)")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+            }
+            
+            // Recording overlay
+            if isRecordingVideo || isRecordingAudio {
+                Color.black
+                    .opacity(appSettings.autoDimming ? appSettings.dimmingIntensity : 0)
+                    .edgesIgnoringSafeArea(.all)
+                    .gesture(appSettings.requireLongPressToStop ? recordingStopGesture : nil)
+                
+                if appSettings.requireLongPressToStop {
+                    Circle()
+                        .trim(from: 0, to: longPressProgress)
+                        .stroke(Color.red, lineWidth: 2)
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 60, height: 60)
                 }
             }
         }
