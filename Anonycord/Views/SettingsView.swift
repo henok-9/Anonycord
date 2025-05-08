@@ -1,10 +1,3 @@
-//
-//  SettingsView.swift
-//  Anonycord
-//
-//  Created by Constantin Clerc on 7/8/24.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
@@ -16,6 +9,7 @@ struct SettingsView: View {
     @State private var channelDefStr: String
     @State private var cameraType: String
     @State private var videoQuality: String
+    @State private var frameRate: String
     // @State private var exitAtEnd: Bool
     // @State private var infoAtBttm: Bool
     // @State private var hideAll: Bool
@@ -24,6 +18,7 @@ struct SettingsView: View {
 
     @State private var cameraTypes = ["Wide", "Selfie"]
     private let videoQualities = ["4K", "1080p"]
+    private let frameRates = ["30 FPS", "60 FPS"]
     
     // init(mediaRecorder: MediaRecorder) {
     //     self.mediaRecorder = mediaRecorder
@@ -41,6 +36,7 @@ struct SettingsView: View {
         _channelDefStr = State(initialValue: String(AppSettings().channelDef))
         _cameraType = State(initialValue: AppSettings().cameraType)
         _videoQuality = State(initialValue: AppSettings().videoQuality)
+        _frameRate = State(initialValue: AppSettings().videoFrameRate == 60 ? "60 FPS" : "30 FPS")
     }
 
 var body: some View {
@@ -124,6 +120,21 @@ var body: some View {
                             mediaRecorder.reconfigureCaptureSession()
                         }
                     }
+                    
+                    if videoQuality == "4K" {
+                        Picker("Frame Rate", selection: $frameRate) {
+                            ForEach(frameRates, id: \.self) { rate in
+                                Text(rate).tag(rate)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: frameRate) { newValue in
+                            appSettings.videoFrameRate = newValue == "60 FPS" ? 60 : 30
+                            DispatchQueue.main.async {
+                                mediaRecorder.reconfigureCaptureSession()
+                            }
+                        }
+                    }
                     Picker("Camera Type", selection: $cameraType) {
                         ForEach(cameraTypes, id: \.self) { type in
                             Text(type).tag(type)
@@ -165,17 +176,6 @@ var body: some View {
                     }
                     .onChange(of: infoAtBttm) { newValue in
                         appSettings.showSettingsAtBttm = infoAtBttm
-                    }
-                }
-                Section(header: Label("Links", systemImage: "link"), footer: Text("A few links to my socials to contact me if you need help.")) {
-                    Button("Github") {
-                        openURL(URL(string: "https://github.com/c22dev/Anonycord")!)
-                    }
-                    Button("Discord") {
-                        openURL(URL(string: "https://discord.com/users/614377175608459264")!)
-                    }
-                    Button("Website") {
-                        openURL(URL(string: "https://cclerc.ch")!)
                     }
                 }
             }

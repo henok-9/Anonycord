@@ -1,10 +1,3 @@
-//
-//  AnonycordApp.swift
-//  Anonycord
-//
-//  Created by Constantin Clerc on 7/8/24.
-//
-
 import SwiftUI
 
 @main
@@ -22,8 +15,8 @@ class AppSettings: ObservableObject {
     @AppStorage("micSampleRate") var micSampleRate: Int = 44100
     @AppStorage("channelDef") var channelDef: Int = 1
     @AppStorage("cameraType") var cameraType: String = "Wide"
-    // @AppStorage("videoQuality") var videoQuality: String = "1080p"
     @AppStorage("videoQuality") var videoQuality: String = "4K"
+    @AppStorage("videoFrameRate") var videoFrameRate: Int = 30
     @AppStorage("crashAtEnd") var crashAtEnd: Bool = false
     @AppStorage("showSettingsAtBttm") var showSettingsAtBttm: Bool = true
     @AppStorage("hideAll") var hideAll: Bool = false

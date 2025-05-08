@@ -1,10 +1,3 @@
-//
-//  MediaRecorder.swift
-//  Anonycord
-//
-//  Created by Constantin Clerc on 7/8/24.
-//
-
 import AVFoundation
 import Photos
 import UIKit
@@ -92,6 +85,7 @@ class MediaRecorder: ObservableObject {
             let videoInput = try AVCaptureDeviceInput(device: cameraDevice)
             if captureSession.canAddInput(videoInput) {
                 captureSession.addInput(videoInput)
+                try configureVideoSettings(for: cameraDevice)
             } else {
                 print("Unable to add video input (?)")
             }
@@ -212,5 +206,27 @@ class MediaRecorder: ObservableObject {
             return ultraWideCamera.isConnected
         }
         return false
+        private func configureVideoSettings(for device: AVCaptureDevice) throws {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+            
+            if AppSettings().videoQuality == "4K" && AppSettings().videoFrameRate == 60 {
+                // Find format that supports 4K/60fps
+                let formats = device.formats.filter { format in
+                    let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+                    let is4K = dimensions.width >= 3840 && dimensions.height >= 2160
+                    let supports60FPS = format.videoSupportedFrameRateRanges.contains { range in
+                        range.maxFrameRate >= 60
+                    }
+                    return is4K && supports60FPS
+                }
+                
+                if let bestFormat = formats.first {
+                    device.activeFormat = bestFormat
+                    device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 60)
+                    device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 60)
+                }
+            }
+        }
     }
 }

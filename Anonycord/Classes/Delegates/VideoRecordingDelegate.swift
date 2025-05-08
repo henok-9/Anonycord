@@ -1,12 +1,12 @@
 //
-//  VideoRecordingDelegate.swift
-//  Anonycord
+//  videorecordingdelegate.swift
+//  anonycord
 //
-//  Created by Constantin Clerc on 7/8/24.
+//  created by constantin clerc on 7/8/24.
 //
 
-import AVFoundation
-import Photos
+import avfoundation
+import photos
 
 class VideoRecordingDelegate: NSObject, AVCaptureFileOutputRecordingDelegate {
     var onFinish: ((URL?) -> Void)?
